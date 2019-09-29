@@ -44,8 +44,16 @@ def build_word2vec(train_text, save_path):
     return word2vec
 
 
+def build_vocab(wd2vc):
+    wordvocab = {}
+    for i, x in enumerate(wd2vc.wv.index2word):
+        wordvocab[x] = (i, wd2vc.wv[x])
+    return wordvocab
+
+
 if __name__ == '__main__':
     # train_texts = build_dataset(config.train_seg_path)
     # word2vec = build_word2vec(train_texts, config.w2v_bin_path)
     w2v = FastText.load(config.w2v_bin_path)
-    print(w2v.most_similar('小米'))
+    vocab = build_vocab(w2v)
+    print(vocab['小米'])
