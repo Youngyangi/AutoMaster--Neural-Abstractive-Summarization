@@ -17,8 +17,8 @@ def stopword(path):
     return word_list
 
 
-if __name__ == '__main__':
-    raw_train_data = pd.read_csv(config.train_path, encoding='utf-8')
+def tokenizer(path):
+    raw_train_data = pd.read_csv(path, encoding='utf-8')
     raw_train_data = raw_train_data.fillna("")
     stoplist = stopword(config.stop_word_path)
     for n in ['Question', 'Dialogue', 'Report']:
@@ -29,3 +29,7 @@ if __name__ == '__main__':
             words = ''.join(words)
             raw_train_data[n][i] = cut(words)
     raw_train_data.to_csv(config.train_seg_path)
+    return
+
+
+tokenizer(config.train_path)

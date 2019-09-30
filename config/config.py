@@ -12,6 +12,6 @@ stop_word_path = os.path.join(pwd_path, 'utilities/stopwords-zh.txt')
 
 train_seg_path = os.path.join(output_dir, 'AutoMaster_Train_Seg_Set.csv')
 train_contend_path = os.path.join(output_dir, 'AutoMaster_Train_Contend.txt')
-trainset_path = os.path.join(output_dir, 'AutoMaster_TrainData.csv')
+traindata_path = os.path.join(output_dir, 'AutoMaster_TrainData.csv')
 
 w2v_bin_path = os.path.join(output_dir, 'w2v.bin')

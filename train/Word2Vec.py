@@ -12,7 +12,7 @@ def build_dataset(path):
     seg_train_data = pd.read_csv(path, encoding='utf-8')
     stoplist = stopword(config.stop_word_path)
     lines = []
-    for n in ['Question', 'Dialogue', 'Report']:
+    for n in ['Text', 'Response']:
         a = list(seg_train_data[n].values)
         b = [str(x).split(' ') for x in a if x not in stoplist]
         lines.extend(b)
@@ -52,8 +52,8 @@ def build_vocab(wd2vc):
 
 
 if __name__ == '__main__':
-    # train_texts = build_dataset(config.train_seg_path)
+    # train_texts = build_dataset(config.traindata_path)
     # word2vec = build_word2vec(train_texts, config.w2v_bin_path)
     w2v = FastText.load(config.w2v_bin_path)
     vocab = build_vocab(w2v)
-    print(vocab['小米'])
+    print(vocab['<start>'])
