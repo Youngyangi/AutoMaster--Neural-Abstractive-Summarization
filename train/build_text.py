@@ -23,7 +23,19 @@ def stopword(path):
     return word_list
 
 
-def build_text(train_path, test_path):
+def build_corpus_text(path):
+    with open(config.train_path, 'r', encoding='utf-8') as f:
+        data1 = f.readlines()
+    with open(config.test_path, 'r', encoding='utf-8') as f:
+        data2 = f.readlines()
+    with open(config.corpus_path, 'w', encoding='utf-8') as f:
+        for sentence in data1:
+            f.write(cut(sentence) + '\n')
+        for sentence in data2:
+            f.write(cut(sentence) + '\n')
+
+
+def build_csv(train_path, test_path):
     raw_train_data = pd.read_csv(train_path)
     raw_test_data = pd.read_csv(test_path)
     # 去掉任意带有空值的行，并重新index
@@ -63,4 +75,5 @@ def build_text(train_path, test_path):
     return
 
 
-build_text(config.train_path, config.test_path)
+build_csv(config.train_path, config.test_path)
+build_corpus_text(config.corpus_path)
