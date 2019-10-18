@@ -10,8 +10,8 @@ test_path = os.path.join(output_dir, 'AutoMaster_TestSet.csv')
 
 stop_word_path = os.path.join(pwd_path, 'utilities/stopwords-zh.txt')
 
-train_seg_path = os.path.join(output_dir, 'AutoMaster_Train_Seg_Set.csv')
-train_contend_path = os.path.join(output_dir, 'AutoMaster_Train_Contend.txt')
+corpus_path = os.path.join(output_dir, 'corpus_w2v.txt')
+
 traindata_path = os.path.join(output_dir, 'AutoMaster_TrainData.csv')
 testdata_path = os.path.join(output_dir, 'AutoMaster_TestData.csv')
 
