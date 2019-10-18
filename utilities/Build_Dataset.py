@@ -10,7 +10,7 @@ def build_trainset(path1, path2):
         response = '<start> ' + str(df.loc[i]['Report']) + ' <end>'
         text_series.append(text), response_series.append(response)
     trainset = pd.DataFrame({'Text': text_series, 'Response': response_series})
-    trainset.to_csv(path2)
+    trainset.to_csv(path2, index=True, index_label='id')
     return
 
 

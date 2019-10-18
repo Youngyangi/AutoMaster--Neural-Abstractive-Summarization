@@ -12,9 +12,9 @@ def build_dataset(path):
     seg_train_data = pd.read_csv(path, encoding='utf-8')
     stoplist = stopword(config.stop_word_path)
     lines = []
-    for n in ['Text', 'Response']:
-        a = list(seg_train_data[n].values)
-        b = [str(x).split(' ') for x in a if x not in stoplist]
+    for n in ['Input', 'Report']:
+        a = seg_train_data[n].values.tolist()
+        b = [str(x).split(' ') for x in a]
         lines.extend(b)
     if not os.path.exists(config.train_contend_path):
         with open(config.train_contend_path, 'w', encoding='utf-8') as f:
@@ -45,9 +45,10 @@ def build_word2vec(train_text, save_path):
 
 
 def build_vocab(wd2vc):
+    # The vocab shows in the format of "word: (index, vector)"
     wordvocab = {}
     for i, x in enumerate(wd2vc.wv.index2word):
-        wordvocab[x] = (i, wd2vc.wv[x])
+        wordvocab[x] = wd2vc.wv[x]
     return wordvocab
 
 
