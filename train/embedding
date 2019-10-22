@@ -1,18 +1,22 @@
 import keras
 import pandas as pd
+import numpy as np
 from config import config
 from keras.preprocessing.text import Tokenizer
+from gensim.models import Word2Vec
 
 max_features = 300
 maxlen = 300
 embed_size = 100
-max_length_inp, max_length_targ= 500, 50
+max_length_inp, max_length_targ = 500, 50
 
 
 def tokenize(lang, max_len):
+    # 这里max_features是要挑选最常用的词汇
     tokenizer = Tokenizer(filters='', lower=False, num_words=max_features)
     tokenizer.fit_on_texts(lang)
-    # 110k 的词典
+    # 114k 的词典
+    # 注意：keras API的word_index是从1开始的
     word_index = tokenizer.word_index
     tensor = tokenizer.texts_to_sequences(lang)
     tensor = keras.preprocessing.sequence.pad_sequences(tensor, padding='post', maxlen=max_len)
@@ -28,5 +32,30 @@ def load_train():
     return input_tensor, target_tensor, word_index1, word_index2, tokenizer1, tokenizer2
 
 
+def get_embedding(model):
+    input_tensor, target_tensor, word_index1, word_index2, tokenizer1, tokenizer2 = load_train()
+    # encoder embedding
+    word_size1 = min(max_features, len(word_index1))
+    embedding_matrix1 = np.zeros((word_size1, embed_size))
+    # 此处的i是从1开始的
+    for word, i in word_index1.items():
+        if i > word_size1: break
+        if word not in model.wv.vocab:
+            embedding_matrix1[i-1] = np.random.uniform(low=-0.025, high=0.025, size=embed_size)
+        else:
+            embedding_matrix1[i-1] = model.wv[word]
+    # decoder embedding
+    word_size2 = min(max_features, len(word_index2))
+    embedding_matrix2 = np.zeros((word_size2, embed_size))
+    for word, i in word_index2.items():
+        if i > word_size2: break
+        if word not in model.wv.vocab:
+            embedding_matrix2[i-1] = np.random.uniform(low=-0.025, high=0.025, size=embed_size)
+        else:
+            embedding_matrix2[i-1] = model.wv[word]
+    return embedding_matrix1, embedding_matrix2
+
+
 if __name__ == "__main__":
-    load_train()
+    w2v_model = Word2Vec.load(config.w2v_bin_path)
+    get_embedding(w2v_model)
