@@ -16,7 +16,7 @@ def tokenize(lang, max_len):
     tokenizer = Tokenizer(filters='', lower=False, num_words=max_features)
     tokenizer.fit_on_texts(lang)
     # 114k 的词典
-    # 注意：keras API的word_index是从1开始的
+    # 注意：keras API的word_index是从1开始的，0要预留出来，因为进行了补零操作
     word_index = tokenizer.word_index
     tensor = tokenizer.texts_to_sequences(lang)
     tensor = keras.preprocessing.sequence.pad_sequences(tensor, padding='post', maxlen=max_len)
@@ -39,20 +39,20 @@ def get_embedding(model):
     embedding_matrix1 = np.zeros((word_size1, embed_size))
     # 此处的i是从1开始的
     for word, i in word_index1.items():
-        if i > word_size1: break
+        if i >= word_size1: break
         if word not in model.wv.vocab:
-            embedding_matrix1[i-1] = np.random.uniform(low=-0.025, high=0.025, size=embed_size)
+            embedding_matrix1[i] = np.random.uniform(low=-0.025, high=0.025, size=embed_size)
         else:
-            embedding_matrix1[i-1] = model.wv[word]
+            embedding_matrix1[i] = model.wv[word]
     # decoder embedding
     word_size2 = min(max_features, len(word_index2))
     embedding_matrix2 = np.zeros((word_size2, embed_size))
     for word, i in word_index2.items():
-        if i > word_size2: break
+        if i >= word_size2: break
         if word not in model.wv.vocab:
-            embedding_matrix2[i-1] = np.random.uniform(low=-0.025, high=0.025, size=embed_size)
+            embedding_matrix2[i] = np.random.uniform(low=-0.025, high=0.025, size=embed_size)
         else:
-            embedding_matrix2[i-1] = model.wv[word]
+            embedding_matrix2[i] = model.wv[word]
     return embedding_matrix1, embedding_matrix2
 
 
