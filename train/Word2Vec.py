@@ -59,5 +59,7 @@ if __name__ == '__main__':
     # word2vec = build_word2vec(config.corpus_path, config.w2v_bin_path)
     w2v = Word2Vec.load(config.w2v_bin_path)
     assert '汽车' in w2v.wv.vocab
+    assert '<start>' in w2v.wv.vocab
+    assert '<end>' in w2v.wv.vocab
     vocab = build_vocab(w2v)
     print(len(vocab))

@@ -23,10 +23,16 @@ def tokenize(lang, max_len):
     return tensor, tokenizer, word_index
 
 
-def load_train():
+def load_train(num_samples=None):
     data = pd.read_csv(config.traindata_path)
-    source = [str(m) for m in data['Input'].values.tolist()]
-    target = [str(m) for m in data['Report'].values.tolist()]
+    if num_samples is None:
+        source = [str(m) for m in data['Input'].values.tolist()]
+        target = [str(m) for m in data['Report'].values.tolist()]
+    else:
+        source = data['Input'].values.tolist()
+        target = data['Report'].values.tolist()
+        source = [str(m) for m in source[:num_samples]]
+        target = [str(m) for m in target[:num_samples]]
     input_tensor, tokenizer1, word_index1 = tokenize(source, max_length_inp)
     target_tensor, tokenizer2, word_index2 = tokenize(target, max_length_targ)
     return input_tensor, target_tensor, word_index1, word_index2, tokenizer1, tokenizer2

@@ -24,15 +24,15 @@ def stopword(path):
 
 
 def build_corpus_text(path):
-    with open(config.train_path, 'r', encoding='utf-8') as f:
-        data1 = f.readlines()
-    with open(config.test_path, 'r', encoding='utf-8') as f:
-        data2 = f.readlines()
-    with open(config.corpus_path, 'w', encoding='utf-8') as f:
-        for sentence in data1:
-            f.write(cut(sentence) + '\n')
-        for sentence in data2:
-            f.write(cut(sentence) + '\n')
+    traindata = pd.read_csv(config.traindata_path, encoding='utf8')
+    testdata = pd.read_csv(config.testdata_path, encoding='utf8')
+    with open(path, 'w', encoding='utf-8') as f:
+        for m, n in zip(traindata['Input'], testdata['Input']):
+            f.write(m + '\n')
+            f.write(n + '\n')
+        for i in traindata['Report']:
+            f.write(i + '\n')
+    return
 
 
 def build_csv(train_path, test_path):
@@ -62,10 +62,12 @@ def build_csv(train_path, test_path):
     raw_train_data.dropna(axis=0, how='any', inplace=True)
     raw_test_data.dropna(axis=0, how='any', inplace=True)
     # 将训练用的文本拼接在一起
+    # 加上起止符号<start>, <end>
     raw_train_data['Input'] = raw_train_data['Model'] + ' ' + raw_train_data['Brand'] + ' ' + \
-                              raw_train_data['Question'] + ' ' + raw_train_data['Dialogue']
+                              '<start> ' + raw_train_data['Question'] + ' ' + raw_train_data['Dialogue'] + ' <end>'
     raw_test_data['Input'] = raw_test_data['Model'] + ' ' + raw_test_data['Brand'] + ' ' + \
-                             raw_test_data['Question'] + ' ' + raw_test_data['Dialogue']
+                             '<start> ' + raw_test_data['Question'] + ' ' + raw_test_data['Dialogue'] + ' <end>'
+    raw_train_data['Report'] = '<start> ' + raw_train_data['Report'] + ' <end>'
     # 去掉多余的列
     raw_train_data.drop(['Model', 'Brand', 'Question', 'Dialogue'], axis=1, inplace=True)
     raw_test_data.drop(['Model', 'Brand', 'Question', 'Dialogue'], axis=1, inplace=True)
@@ -75,5 +77,5 @@ def build_csv(train_path, test_path):
     return
 
 
-build_csv(config.train_path, config.test_path)
+# build_csv(config.train_path, config.test_path)
 build_corpus_text(config.corpus_path)
