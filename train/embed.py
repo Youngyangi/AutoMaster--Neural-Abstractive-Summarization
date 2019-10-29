@@ -1,7 +1,7 @@
-import keras
 import pandas as pd
 import numpy as np
 from config import config
+from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 from gensim.models import Word2Vec
 
@@ -19,7 +19,7 @@ def tokenize(lang, max_len):
     # 注意：keras API的word_index是从1开始的，0要预留出来，因为进行了补零操作
     word_index = tokenizer.word_index
     tensor = tokenizer.texts_to_sequences(lang)
-    tensor = keras.preprocessing.sequence.pad_sequences(tensor, padding='post', maxlen=max_len)
+    tensor = pad_sequences(tensor, padding='post', maxlen=max_len)
     return tensor, tokenizer, word_index
 
 
