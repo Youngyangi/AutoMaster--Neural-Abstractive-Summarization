@@ -1,111 +1,76 @@
-import pandas as pd
-import numpy as np
-from keras.layers import Input, GRU, Dense
-from keras.models import Model
-from Seq2Seq import Encoder
+import os
+import tensorflow as tf
+import time
 from config import config
-from Word2Vec import build_vocab
-from gensim.models.fasttext import FastText
+from gensim.models import Word2Vec
+from Model_Seq2Seq import Encoder, Decoder, BahdanauAttention, loss_function
+from embed import get_embedding, load_train
 
 
-BATCH_SIZE = 2
-embedding_dim = 256
-units = 1024
+BATCH_SIZE = 64
+embedding_dim = 100
+units = 10
+vocab_size = 300
+EPOCH = 10
+
+# 使用预训练的词向量
+# w2v_model = Word2Vec.load(config.w2v_bin_path)
+# input_weights, output_weights = get_embedding(w2v_model)
+
+input_tensor_train, target_tensor_train, word_index1, word_index2, tokenizer1, tokenizer2 = load_train(num_samples=128)
+
+BUFFER_SIZE = len(input_tensor_train)
+steps_per_epoch = BUFFER_SIZE//BATCH_SIZE
+
+dataset = tf.data.Dataset.from_tensor_slices((input_tensor_train, target_tensor_train)).shuffle(BUFFER_SIZE)
+dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
+
+example_input_batch, example_target_batch = next(iter(dataset))
+print(example_input_batch.shape, example_target_batch.shape)
+# 实例化
+encoder = Encoder(vocab_size, embedding_dim, units, BATCH_SIZE)
+decoder = Decoder(vocab_size, embedding_dim, units, BATCH_SIZE)
+# 定义优化器和损失函数
+optimizer = tf.keras.optimizers.Adam()
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
+# 定义checkpoint
+checkpoint_dir = './training_checkpoints'
+checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                 encoder=encoder,
+                                 decoder=decoder)
+@tf.function
+def train_step(inp, targ, enc_hidden):
+    loss = 0
+    with tf.GradientTape() as tape:
+        enc_output, enc_hidden = encoder(inp, enc_hidden)
+        dec_hidden = enc_hidden
+        dec_input = tf.expand_dims([word_index2['<start>']]*BATCH_SIZE, 1)
+        for t in range(targ.shape[1]):
+            predictions, dec_hidden, _ = decoder(dec_input, dec_hidden, enc_output)
+            loss += loss_function(targ[:, t], predictions)
+            dec_input = tf.expand_dims(targ[:, t], 1)
+    batch_loss = (loss/int(targ.shape[1]))
+    variables = encoder.trainable_variables + decoder.trainable_variables
+    gradients = tape.gradient(loss, variables)
+    optimizer.apply_gradients(zip(gradients, variables))
+    return batch_loss
 
 
-def load_dataset(path, num_exaples):
-    rawdf = pd.read_csv(path)
-    subdf = rawdf.loc[:num_exaples]
-    text = [x.split() for x in subdf['Text'].values.tolist()]
-    response = [x.split() for x in subdf['Response'].values.tolist()]
-    max_input_leng = max((len(x) for x in text))
-    max_target_len = max((len(x) for x in response))
-    encoder_input_tensor = np.zeros(
-        (len(text), max_input_leng, 200)
-    )
-    decoder_input_tensor = np.zeros(
-        (len(response), max_target_len, 200)
-    )
-    decoder_target_tensor = np.zeros(
-        (len(response), max_target_len, 200)
-    )
-    for i, (input_text, target_text) in enumerate(zip(text, response)):
-        for t, word in enumerate(input_text):
-            if is_oov(word):
-                encoder_input_tensor[i, t, :] = 0
-                continue
-            encoder_input_tensor[i, t] = vocab[word]
-        for t, word in enumerate(target_text):
-            if is_oov(word):
-                decoder_input_tensor[i, t, :] = 0
-                continue
-            decoder_input_tensor[i, t] = vocab[word]
-            if t > 0:
-                if is_oov(word):
-                    decoder_target_tensor[i, t-1, :] = 0
-                    continue
-                decoder_target_tensor[i, t-1] = vocab[word]
-    return encoder_input_tensor, decoder_input_tensor, decoder_target_tensor
+def run_op(epochs):
+    for epoch in range(epochs):
+        start = time.time()
+        enc_hidden = encoder.init_hidden_state()
+        total_loss = 0
+        for (batch, (inp, targ)) in enumerate(dataset.take(steps_per_epoch)):
+            batch_loss = train_step(inp, targ, enc_hidden)
+            total_loss += batch_loss
+            if batch % 100 == 0:
+                print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss.numpy()))
+        if (epoch + 1) % 2 == 0:
+            checkpoint.save(file_prefix=checkpoint_prefix)
+        print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
+        print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
-def is_oov(word):
-    return False if word in vocab else True
-
-
-def sentence2index(sentence, max_len):
-    words = sentence.split()
-    zeros = [0] * (max_len - len(words))
-    indexes = []
-    for x in words:
-        if is_oov(x):
-            index = 0
-        else:
-            index = vocab[x][0]
-        indexes.append(index)
-    indexes.extend(zeros)
-    return indexes
-
-
-def build_index(data):
-    max_len = max((len(x.split()) for x in data))
-    indexes = []
-    for x in data:
-        index = sentence2index(x, max_len)
-        indexes.append(index)
-    return indexes, max_len
-
-
-if __name__ == '__main__':
-    # df = pd.read_csv(config.traindata_path)
-    w2v = FastText.load(config.w2v_bin_path)
-    vocab = build_vocab(w2v)
-    num_voc = len(vocab)
-    subtext_tensor, subresponse_tensor, subresponse_tftensor = load_dataset(config.traindata_path, 199)
-    # subtext_index, max_inputsize = build_index(subtext)
-    # subresponse_index, max_inputsize2 = build_index(subresponse)
-    # print(subtext_index[:2], subresponse_index[:2])
-    # encoder = Encoder(max_inputsize, embedding_dim, units, BATCH_SIZE)
-    encoder = GRU(1024, return_sequences=True, return_state=True, batch_size=BATCH_SIZE)
-    encoder_inputs = Input(shape=(None, 200))
-    sample_output, sample_hidden = encoder(encoder_inputs)
-    print('Encoder output shape: (batch size, sequence length, units) {}'.format(sample_output.shape))
-    print('Encoder Hidden state shape: (batch size, units) {}'.format(sample_hidden.shape))
-    decoder_inputs = Input(shape=(None, 200))
-    decoder = GRU(1024, return_state=True, return_sequences=True, batch_size=BATCH_SIZE)
-    decoder_outputs, _ = decoder(decoder_inputs, initial_state=sample_hidden)
-    decoder_dense = Dense(200, activation='softmax')
-    decoder_outputs = decoder_dense(decoder_outputs)
-
-    model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    model.fit([subtext_tensor, subresponse_tensor], subresponse_tftensor,
-              batch_size=BATCH_SIZE,
-              epochs=10,
-              validation_split=0.2)
-
-
-
-
-
-
+run_op(2)
