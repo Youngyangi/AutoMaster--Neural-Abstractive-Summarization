@@ -5,7 +5,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 from gensim.models import Word2Vec
 
-max_features = 300
+max_features = 3000
 maxlen = 300
 embed_size = 100
 max_length_inp, max_length_targ = 500, 50

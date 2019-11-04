@@ -69,7 +69,7 @@ class Decoder(tf.keras.Model):
         embed = self.embedding(x)
         context_vec, attention_weight = self.attention(hidden, enc_output)
         # expand_dims后的context_vec shape == [batch_size, 1, dec_units]
-        # embed.py shape == [batch_size, 1, embedding_dim]
+        # embed shape == [batch_size, 1, embedding_dim]
         # dec_input shape == [batch_size, 1, dec_units + embedding_dim]
         dec_input = tf.concat([tf.expand_dims(context_vec, axis=1), embed], axis=-1)
         # passing to GRU
