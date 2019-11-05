@@ -16,3 +16,5 @@ traindata_path = os.path.join(output_dir, 'AutoMaster_TrainData.csv')
 testdata_path = os.path.join(output_dir, 'AutoMaster_TestData.csv')
 
 w2v_bin_path = os.path.join(output_dir, 'w2v.bin')
+
+test_result_path = os.path.join(output_dir, 'AutoMaster_TestResult.csv')
