@@ -1,12 +1,8 @@
 import os
 import tensorflow as tf
 import time
-import jieba
-from config import config
 from gensim.models import Word2Vec
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import Tokenizer
-from Model_Seq2Seq import Encoder, Decoder, BahdanauAttention, loss_function
+from Model_Seq2Seq import Encoder, Decoder, loss_function
 from embed import get_embedding, load_train
 
 
@@ -20,7 +16,7 @@ EPOCH = 10
 # w2v_model = Word2Vec.load(config.w2v_bin_path)
 # input_weights, output_weights = get_embedding(w2v_model)
 
-input_tensor_train, target_tensor_train, word_index1, word_index2, tokenizer1, tokenizer2 = load_train(num_samples=128)
+input_tensor_train, target_tensor_train, word_index1, word_index2, tokenizer1, tokenizer2 = load_train()
 
 BUFFER_SIZE = len(input_tensor_train)
 steps_per_epoch = BUFFER_SIZE//BATCH_SIZE
@@ -42,6 +38,8 @@ checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                  encoder=encoder,
                                  decoder=decoder)
+
+
 @tf.function
 def train_step(inp, targ, enc_hidden):
     loss = 0
@@ -76,40 +74,4 @@ def run_op(epochs):
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
-def deduct(sentence):
-    input_tensor = []
-    result = ''
-    cut = sentence.split()
-    for word in cut:
-        input_tensor.append(word_index1[word])
-    # input_tensor shape == [1, 500]
-    input_tensor = pad_sequences([input_tensor], padding='post', maxlen=500)
-    input_tensor = tf.convert_to_tensor(input_tensor)
-    init_hidden = tf.zeros((1, units))
-    # for single dedcution, the sentence will only be processed by encoder once
-    enc_output, enc_hidden = encoder(input_tensor, init_hidden)
-    dec_hidden = enc_hidden
-    # here notice the squre brackets, without it, dec_input shape == [1, ], with it, shape == [1,1]
-    dec_input = tf.expand_dims([tokenizer2.word_index['<start>']], 0)
-    for i in range(50):
-        prediction, dec_hidden, attention_weight = decoder(dec_input, dec_hidden, enc_output)
-        # greedy search here -- alwasy choose the best logits answer
-        prediction_id = tf.argmax(prediction[0]).numpy()
-        # collect words for result
-        result += tokenizer2.index_word[prediction_id] + ' '
-        if tokenizer2.index_word[prediction_id] == '<end>':
-            return result, sentence
-        # feed the next round dec_input with prediction_id
-        dec_input = tf.expand_dims([prediction_id], 0)
-    return result
-
-
-def translate(sentence):
-    prediction = deduct(sentence)
-    print(f"Original Input:{sentence}")
-    print(f"Report generated: {prediction}")
-
-
-# run_op(2)
-checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
-translate('奥迪 一汽大众 奥迪 <start> 修 一下 钱 换 修 技师 你好 师傅 抛光 处理 一下 50 元 左右 希望 能够 帮到 祝 愉快 <end>')
+run_op(EPOCH)
