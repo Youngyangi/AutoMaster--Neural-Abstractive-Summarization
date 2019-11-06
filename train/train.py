@@ -38,6 +38,7 @@ checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                  encoder=encoder,
                                  decoder=decoder)
+checkpoint_mng = tf.train.CheckpointManager(checkpoint, directory=checkpoint_dir, max_to_keep=3)
 
 
 @tf.function
@@ -69,9 +70,11 @@ def run_op(epochs):
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss.numpy()))
         if (epoch + 1) % 2 == 0:
-            checkpoint.save(file_prefix=checkpoint_prefix)
+            checkpoint_mng.save()
         print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
+checkpoint.restore(checkpoint_mng.latest_checkpoint)
 run_op(EPOCH)
+
