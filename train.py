@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import time
+from config import config
 from gensim.models import Word2Vec
 from Model_Seq2Seq import Encoder, Decoder, loss_function
 from embed import get_embedding, load_train
@@ -13,8 +14,8 @@ vocab_size = 3000
 EPOCH = 10
 
 # 使用预训练的词向量
-# w2v_model = Word2Vec.load(config.w2v_bin_path)
-# input_weights, output_weights = get_embedding(w2v_model)
+w2v_model = Word2Vec.load(config.w2v_bin_path)
+input_weights, output_weights = get_embedding(w2v_model)
 
 input_tensor_train, target_tensor_train, word_index1, word_index2, tokenizer1, tokenizer2 = load_train()
 
@@ -27,8 +28,8 @@ dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
 example_input_batch, example_target_batch = next(iter(dataset))
 print(example_input_batch.shape, example_target_batch.shape)
 # 实例化
-encoder = Encoder(vocab_size, embedding_dim, units, BATCH_SIZE)
-decoder = Decoder(vocab_size, embedding_dim, units, BATCH_SIZE)
+encoder = Encoder(vocab_size, embedding_dim, units, BATCH_SIZE, input_weights)
+decoder = Decoder(vocab_size, embedding_dim, units, BATCH_SIZE, output_weights)
 # 定义优化器和损失函数
 optimizer = tf.keras.optimizers.Adam()
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
@@ -75,6 +76,6 @@ def run_op(epochs):
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
 
-checkpoint.restore(checkpoint_mng.latest_checkpoint)
+# checkpoint.restore(checkpoint_mng.latest_checkpoint)
 run_op(EPOCH)
 

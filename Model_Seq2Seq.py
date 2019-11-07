@@ -8,7 +8,9 @@ class Encoder(tf.keras.Model):
         # weights = [matrix]
         self.bc_size = batch_size
         self.enc_units = enc_units
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+                                                   embeddings_initializer=tf.keras.initializers.Constant(matrix),
+                                                   trainable=False)
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_state=True,
                                        return_sequences=True,
@@ -57,7 +59,9 @@ class Decoder(tf.keras.Model):
         # weights = [matrix]
         self.bc_size = batch_size
         self.dec_units = dec_units
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+                                                   embeddings_initializer=tf.keras.initializers.Constant(matrix),
+                                                   trainable=False)
         self.gru = tf.keras.layers.GRU(self.dec_units,
                                        return_state=True,
                                        return_sequences=True,

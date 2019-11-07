@@ -44,13 +44,15 @@ def beam_deduct(sentence, width=2, max_len=50):
     dec_hidden = enc_hidden
     # here notice the squre brackets, without it, dec_input shape == [1, ], with it, shape == [1,1]
     dec_input = tf.expand_dims([tokenizer2.word_index['<start>']], 0)
-    # passing <start> to decoder
+    # passing <start> to decoder, and make sure the first token is '<start>'
+    _, dec_hidden, attention_weight = decoder(dec_input, dec_hidden, enc_output)
+    dec_input = tf.expand_dims([tokenizer2.word_index['<start>']], 0)
     prediction, dec_hidden, attention_weight = decoder(dec_input, dec_hidden, enc_output)
     # sort by probability of each word on vocab, select beam_width number as candidate
     prob_sorted = tf.argsort(tf.nn.softmax(prediction[0]), direction='DESCENDING')
     word_candid = prob_sorted[:beam_width]
     word_prob = [tf.nn.softmax(prediction[0])[x] for x in word_candid]
-    result = ['']*beam_width
+    result = ['<start> ']*beam_width
     # first word is out of the loop
     for i in range(beam_width):
         result[i] += tokenizer2.index_word[word_candid.numpy()[i]] + ' '
@@ -116,13 +118,14 @@ def translate(sentence):
 
 def generate_test_csv(path):
     df = pd.read_csv(path, encoding='utf-8')
-    data= df['Input'][:200]
+    data = df['Input'][:200]
     report = []
     print(len(data))
     for i, sentence in enumerate(data):
         if i % 200 == 0:
             print(f"Translation at {i} place")
-        prediction = greedy_deduct(sentence)
+        # prediction = greedy_deduct(sentence, max_len=50)
+        prediction = beam_deduct(sentence, width=3, max_len=50)
         report.append(prediction)
     report = pd.Series(report, name='Report')
     df.insert(loc=2, column='Report', value=report)
@@ -130,4 +133,4 @@ def generate_test_csv(path):
 
 
 translate('奥迪 一汽大众 奥迪 <start> 修 一下 钱 换 修 技师 你好 师傅 抛光 处理 一下 50 元 左右 希望 能够 帮到 祝 愉快 <end>')
-# generate_test_csv(config.testdata_path)
+generate_test_csv(config.testdata_path)

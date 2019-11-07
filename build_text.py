@@ -7,7 +7,7 @@ import re
 def cut(sentence):
     # jieba切词，默认精确模式，全模式cut参数：cut_all=True
     # 加入停用词
-    stoplist = stopword(config.stop_word_path)
+    stoplist = ['语音', '|', '图片']
     words = jieba.cut(sentence)
     words = [w for w in words if w not in stoplist]
     return ' '.join(words)
