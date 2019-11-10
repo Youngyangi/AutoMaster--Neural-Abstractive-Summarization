@@ -31,9 +31,10 @@ def stopword(path):
 def build_word2vec(train_text, save_path):
     print("training word2vec...")
     start_time = time.time()
-    # Word2vec+LineSentence训练只用了30s不到，Fasttext要20分钟以上。
-    word2vec = Word2Vec(LineSentence(train_text), min_count=5, size=100, workers=5)
-    # word2vec = FastText(train_text, sg=1, min_count=5, iter=5, size=200, workers=5)
+    # Fasttext+LineSentence训练只用了30s不到，不加LineSentence要20分钟以上。
+    # 加入LineSentence后速度明显提升
+    word2vec = Word2Vec(LineSentence(train_text), min_count=3, size=256, workers=5, iter=40)
+    # word2vec = FastText(LineSentence(train_text), sg=1, min_count=3, iter=40, size=256, workers=5)
     print(f'training is done, {time.time() - start_time} seconds elapsed')
     if os.path.exists(config.w2v_bin_path):
         print("already saved")
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     # train_texts = build_dataset(config.traindata_path)
     # w2v = FastText.load(config.w2v_bin_path)
     # vocab = build_vocab(w2v)
-    # word2vec = build_word2vec(config.corpus_path, config.w2v_bin_path)
+    word2vec = build_word2vec(config.corpus_path, config.w2v_bin_path)
     w2v = Word2Vec.load(config.w2v_bin_path)
     assert '汽车' in w2v.wv.vocab
     assert '<start>' in w2v.wv.vocab

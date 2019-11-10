@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 from config import config
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
 from gensim.models import Word2Vec
 
-max_features = 3000
+max_features = 20000
 maxlen = 300
-embed_size = 100
+embed_size = 256
 max_length_inp, max_length_targ = 500, 50
 
 
