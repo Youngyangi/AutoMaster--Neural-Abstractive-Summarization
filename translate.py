@@ -2,19 +2,29 @@ import tensorflow as tf
 import os
 import pandas as pd
 from config import config
+from utilities.GPU_settings import gpu_memory_limit
+from gensim.models import Word2Vec
 from Model_Seq2Seq import Encoder, Decoder
-from embed import load_train
-from keras.preprocessing.sequence import pad_sequences
+from embed import load_train, get_embedding
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-BATCH_SIZE = 64
-embedding_dim = 100
-units = 10
-vocab_size = 3000
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+gpu_memory_limit()  # When errors come "Fail to find the dnn implementation." put this on
+
+BATCH_SIZE = 8
+embedding_dim = 256
+units = 200
+vocab_size = 20000
 
 _, _, word_index1, word_index2, tokenizer1, tokenizer2 = load_train()
 
-encoder = Encoder(vocab_size, embedding_dim, units, BATCH_SIZE)
-decoder = Decoder(vocab_size, embedding_dim, units, BATCH_SIZE)
+# 使用预训练的词向量
+w2v_model = Word2Vec.load(config.w2v_bin_path)
+input_weights, output_weights = get_embedding(w2v_model)
+
+encoder = Encoder(vocab_size, embedding_dim, units, BATCH_SIZE, input_weights)
+decoder = Decoder(vocab_size, embedding_dim, units, BATCH_SIZE, output_weights)
 optimizer = tf.keras.optimizers.Adam()
 
 checkpoint_dir = './training_checkpoints'
@@ -110,8 +120,8 @@ def greedy_deduct(sentence, max_len):
 
 
 def translate(sentence):
-    prediction = beam_deduct(sentence, width=3, max_len=50)
-    # prediction = greedy_deduct(sentence, max_len=50)
+    # prediction = beam_deduct(sentence, width=3, max_len=50)
+    prediction = greedy_deduct(sentence, max_len=50)
     print(f"Original Input:{sentence}")
     print(f"Report generated: {prediction}")
 
@@ -124,8 +134,8 @@ def generate_test_csv(path):
     for i, sentence in enumerate(data):
         if i % 200 == 0:
             print(f"Translation at {i} place")
-        # prediction = greedy_deduct(sentence, max_len=50)
-        prediction = beam_deduct(sentence, width=3, max_len=50)
+        prediction = greedy_deduct(sentence, max_len=50)
+        # prediction = beam_deduct(sentence, width=3, max_len=50)
         report.append(prediction)
     report = pd.Series(report, name='Report')
     df.insert(loc=2, column='Report', value=report)
@@ -133,4 +143,4 @@ def generate_test_csv(path):
 
 
 translate('奥迪 一汽大众 奥迪 <start> 修 一下 钱 换 修 技师 你好 师傅 抛光 处理 一下 50 元 左右 希望 能够 帮到 祝 愉快 <end>')
-generate_test_csv(config.testdata_path)
+# generate_test_csv(config.testdata_path)
