@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 import time
 from config import config
+from utilities.GPU_settings import gpu_memory_limit
 from gensim.models import Word2Vec
 from Model_Seq2Seq import Encoder, Decoder, loss_function
 from embed import get_embedding, load_train
@@ -16,6 +17,7 @@ vocab_size = 20000
 EPOCH = 10
 using_GPU = True
 
+gpu_memory_limit()
 
 # 使用预训练的词向量
 w2v_model = Word2Vec.load(config.w2v_bin_path)
@@ -73,10 +75,10 @@ def run_op(epochs):
         for (batch, (inp, targ)) in enumerate(dataset.take(steps_per_epoch)):
             batch_loss = train_step(inp, targ, enc_hidden)
             total_loss += batch_loss
-            if batch % 100 == 0 and batch != 0:
+            if batch % 100 == 0:
                 print('Epoch {} Batch {} at {} Sample, Loss {:.4f}'.format(epoch + 1, batch,
                                                                            batch*BATCH_SIZE, batch_loss.numpy()))
-            if batch % 2000 == 0:
+            if batch % 2000 == 0 and batch != 0:
                 checkpoint_mng.save()
                 print('Checkpoint saved')
         if (epoch + 1) % 2 == 0:
