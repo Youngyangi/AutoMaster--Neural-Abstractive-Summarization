@@ -126,21 +126,38 @@ def translate(sentence):
     print(f"Report generated: {prediction}")
 
 
-def generate_test_csv(path):
-    df = pd.read_csv(path, encoding='utf-8')
-    data = df['Input'][:200]
+def generate_test_csv(input_path, output_path):
+    input = pd.read_csv(input_path, encoding='utf-8')
+    output = pd.read_csv(output_path, encoding='utf-8')
+    data = input['Input']
     report = []
     print(len(data))
     for i, sentence in enumerate(data):
         if i % 200 == 0:
-            print(f"Translation at {i} place")
+            print("Translation at {} place, process {:.2f}%".format(i, 100*i/len(data)))
         prediction = greedy_deduct(sentence, max_len=50)
         # prediction = beam_deduct(sentence, width=3, max_len=50)
         report.append(prediction)
     report = pd.Series(report, name='Report')
-    df.insert(loc=2, column='Report', value=report)
-    df.to_csv(config.test_result_path, encoding='utf-8', index=False)
+    output.insert(loc=5, column='Report', value=report)
+    output.to_csv(config.test_result_path, encoding='utf-8', index=False)
+
+
+def remove_token(path):
+    token = ['<start>', '<end>']
+    df = pd.read_csv(path, encoding='utf-8')
+    reports = df['Report'].values.tolist()
+    removed = []
+    for report in reports:
+        words = str(report).split()
+        words = [word for word in words if word not in token]
+        words = ''.join(words)
+        removed.append(words)
+    removed = pd.Series(removed, name='Report')
+    df['Report'] = removed
+    df.to_csv('./Data_set/removed_result.csv', encoding='utf-8', index=False)
 
 
 translate('奥迪 一汽大众 奥迪 <start> 修 一下 钱 换 修 技师 你好 师傅 抛光 处理 一下 50 元 左右 希望 能够 帮到 祝 愉快 <end>')
-# generate_test_csv(config.testdata_path)
+generate_test_csv(config.testdata_path, config.test_path)
+remove_token(config.test_result_path)
